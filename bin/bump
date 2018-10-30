@@ -71,6 +71,9 @@ def bump_from_master_branch
   if latest_version.to_s.include?("rc")
     candidate_version = Gem::Version.new(latest_version.segments.dup.tap { |s| s[5] += 1 }.join("."))
     tag_n_push(candidate_version.to_s.sub(".pre.rc","-rc"), name: "master") unless versions.include?(candidate_version)
+  elsif latest_version.to_s.include?("alpha")
+    candidate_version = Gem::Version.new(latest_version.segments.dup.tap { |s| s[5] += 1 }.join("."))
+    tag_n_push(candidate_version.to_s.sub(".pre.alpha","-alpha"), name: "master") unless versions.include?(candidate_version)
   else
     candidate_version = Gem::Version.new(latest_version.segments.dup.tap { |s| s[2] += 1 }.join("."))
     tag_n_push(candidate_version.to_s, name: "master") unless versions.include?(candidate_version)
