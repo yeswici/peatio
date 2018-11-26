@@ -3,7 +3,7 @@
 
 module Operations
   class Chart
-    # TODO: Read chart from yml ???
+    # TODO: Read chart from yml.
     CHART = [
       { code:           101,
         type:           :asset,
