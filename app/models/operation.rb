@@ -50,9 +50,12 @@ class Operation < ActiveRecord::Base
       )
     end
 
-    def balance(currency: nil)
+    def balance(created_at_from: nil, created_at_to: nil, currency: nil)
       if currency.blank?
-        db_balances = group(:currency_id)
+        db_balances = all
+        db_balances = db_balances.where('created_at > ?', created_at_from) unless created_at_from.blank?
+        db_balances = db_balances.where('created_at < ?', created_at_to) unless created_at_to.blank?
+        db_balances = db_balances.group(:currency_id)
                         .sum('credit - debit')
 
         Currency.ids.map(&:to_sym).each_with_object({}) do |id, memo|
