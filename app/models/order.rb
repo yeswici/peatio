@@ -11,14 +11,16 @@ class Order < ActiveRecord::Base
   TYPES = %w[ market limit ]
   enumerize :ord_type, in: TYPES, scope: true
 
+  enumerize :fee_source, in: %w[bid utility]
+
   after_commit(on: :create) { trigger_pusher_event }
   before_validation :fix_number_precision, on: :create
 
-  validates :ord_type, :volume, :origin_volume, :locked, :origin_locked, presence: true
+  validates :ord_type, :volume, :origin_volume, :locked, :origin_locked, :fee_source, presence: true
   validates :origin_volume, numericality: { greater_than: 0.to_d }
   validates :price, numericality: { greater_than: 0 }, if: ->(order) { order.ord_type == 'limit' }
   validate  :market_order_validations, if: ->(order) { order.ord_type == 'market' }
-  
+
   WAIT   = 'wait'
   DONE   = 'done'
   CANCEL = 'cancel'
@@ -60,6 +62,7 @@ class Order < ActiveRecord::Base
       at:            at,
       market:        market_id,
       kind:          kind,
+      fee_source:    fee_source,
       price:         price&.to_s('F'),
       state:         state,
       volume:        volume.to_s('F'),
@@ -78,6 +81,7 @@ class Order < ActiveRecord::Base
     { id:        id,
       market:    market_id,
       type:      type[-3, 3].downcase.to_sym,
+      fee_source: fee_source,
       ord_type:  ord_type,
       volume:    volume,
       price:     price,
@@ -120,6 +124,14 @@ class Order < ActiveRecord::Base
     end
   end
 
+  def calculate_fee(value)
+    return bid_fee(value) if fee_source == 'bid'
+
+    utility_fee(value)
+    # rescue NotEnoughUtilityBalance
+    #   return bid_fee(value)
+  end
+
   private
 
   def is_limit_order?
@@ -153,10 +165,17 @@ class Order < ActiveRecord::Base
     required_funds
   end
 
+  def bid_fee
+    value * fee
+  end
+
+  def utility_fee
+    #  TODO: investigate the utility fee logic on Binance
+  end
 end
 
 # == Schema Information
-# Schema version: 20180813105100
+# Schema version: 20181204145058
 #
 # Table name: orders
 #
@@ -168,6 +187,7 @@ end
 #  volume         :decimal(32, 16)  not null
 #  origin_volume  :decimal(32, 16)  not null
 #  fee            :decimal(32, 16)  default(0.0), not null
+#  fee_source     :string           default("bid")
 #  state          :integer          not null
 #  type           :string(8)        not null
 #  member_id      :integer          not null
