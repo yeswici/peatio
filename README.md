@@ -140,6 +140,10 @@ $> docker-compose up -d barong
 
 This will output password for **admin@barong.io**. Default password is **`Qwerty123`**
 
+Visit URL http://auth.wb.local, login using admin@barong.io / Qwerty123.
+
+Once login is successful, visit URL http://api.wb.local, this will present Peatio screen.
+
 #### Peatio
 
 Start peatio server
